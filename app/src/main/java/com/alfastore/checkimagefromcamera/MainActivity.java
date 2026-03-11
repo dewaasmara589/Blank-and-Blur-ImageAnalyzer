@@ -1,5 +1,6 @@
 package com.alfastore.checkimagefromcamera;
 
+import static com.alfastore.checkimagefromcamera.ImageAnalyzer.getBlurScore;
 import static com.alfastore.checkimagefromcamera.ImageAnalyzer.isBlurry;
 
 import android.Manifest;
@@ -30,6 +31,8 @@ import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import org.opencv.android.OpenCVLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +85,13 @@ public class MainActivity extends AppCompatActivity {
                 openCamera();
             }
         });
+
+        // Check OpenCV
+        if (OpenCVLoader.initDebug()){
+            Log.d("TAG", "Success OpenCV");
+        }else {
+            Log.d("TAG", "Err OpenCV");
+        }
     }
 
     private ActivityResultLauncher<String[]> permissionLauncherMultiple = registerForActivityResult(
@@ -160,6 +170,9 @@ public class MainActivity extends AppCompatActivity {
             analyzer.checkIfImageIsBlack(photo, new ImageAnalyzer.AnalysisCallback() {
                 @Override
                 public void onResult(boolean isBlack) {
+                    double scoreBlur = getBlurScore(photo);
+                    Log.d("TAG", "scoreBlur: " + String.valueOf(scoreBlur));
+
                     if (isBlack) {
                         // Handle black image (e.g., show a warning or discard)
                         Toast.makeText(MainActivity.this, "Image is blank!", Toast.LENGTH_SHORT).show();

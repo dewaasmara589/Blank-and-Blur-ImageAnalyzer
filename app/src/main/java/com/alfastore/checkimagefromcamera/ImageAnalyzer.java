@@ -8,10 +8,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
+import org.opencv.imgproc.Imgproc;
+
 public class ImageAnalyzer {
 
     // A high-end camera might have a baseline variance of 500, while a budget camera might only hit 150 even when sharp
-    private static final double BLUR_THRESHOLD = 100.0;
+    private static final double BLUR_THRESHOLD = 150.0;
 
     // Threshold: 0 is absolute black, 255 is white.
     // 15-20 is usually safe for "near black" sensor noise.
@@ -117,5 +124,26 @@ public class ImageAnalyzer {
         int b = pixel & 0xFF;
         // ITU-R BT.709 formula for luminance
         return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+    }
+
+    public static double getBlurScore(Bitmap bitmap) {
+        // 1. Convert Bitmap to OpenCV Mat
+        Mat mat = new Mat();
+        Utils.bitmapToMat(bitmap, mat);
+
+        // 2. Convert to Grayscale
+        Mat grayMat = new Mat();
+        Imgproc.cvtColor(mat, grayMat, Imgproc.COLOR_BGR2GRAY);
+
+        // 3. Apply Laplacian Filter
+        Mat destination = new Mat();
+        Imgproc.Laplacian(grayMat, destination, CvType.CV_64F);
+
+        // 4. Calculate Variance
+        MatOfDouble median = new MatOfDouble();
+        MatOfDouble stdDev = new MatOfDouble();
+        Core.meanStdDev(destination, median, stdDev);
+
+        return Math.pow(stdDev.get(0, 0)[0], 2);
     }
 }

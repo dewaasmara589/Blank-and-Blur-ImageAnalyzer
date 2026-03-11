@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "CheckImageFromCamera"
 include(":app")
- 
+include(":openCV")
