@@ -7,9 +7,12 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,20 +20,30 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.otaliastudios.cameraview.CameraListener;
+import com.otaliastudios.cameraview.CameraView;
+import com.otaliastudios.cameraview.PictureResult;
+import com.otaliastudios.cameraview.size.SizeSelectors;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -39,9 +52,10 @@ import java.io.IOException;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private ImageView ivPhoto;
+    private ImageView ivPhoto, previewImage;
     private ImageButton ibCapture;
-    private Button btnUbah, btnSelesai;
+    private Button btnUbah, btnSelesai, captureButton, ulangButton;
+    private LinearLayout container, llWatermark;
 
     private String currentPhotoPath;
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -67,30 +81,96 @@ public class MainActivity extends AppCompatActivity {
         }
         permissionLauncherMultiple.launch(permission);
 
-        ivPhoto = findViewById(R.id.ivPhoto);
-        btnSelesai = findViewById(R.id.btnSelesai);
-
-        ibCapture = findViewById(R.id.ibCapture);
-        ibCapture.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openCamera();
-            }
-        });
-
-        btnUbah = findViewById(R.id.btnUbah);
-        btnUbah.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openCamera();
-            }
-        });
+//        ivPhoto = findViewById(R.id.ivPhoto);
+//        btnSelesai = findViewById(R.id.btnSelesai);
+//
+//        ibCapture = findViewById(R.id.ibCapture);
+//        ibCapture.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                openCamera();
+//            }
+//        });
+//
+//        btnUbah = findViewById(R.id.btnUbah);
+//        btnUbah.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                openCamera();
+//            }
+//        });
 
         // Check OpenCV
         if (OpenCVLoader.initDebug()){
             Log.d("TAG", "Success OpenCV");
         }else {
             Log.d("TAG", "Err OpenCV");
+        }
+
+        /*
+        previewImage = findViewById(R.id.imagePreview);
+        captureButton = findViewById(R.id.captureButton);
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        CameraView camera = findViewById(R.id.camera);
+        camera.setPictureSize(SizeSelectors.and(
+                SizeSelectors.minWidth(4000),
+                SizeSelectors.minHeight(3000)
+        ));
+        camera.setLifecycleOwner(this);
+
+        camera.addCameraListener(new CameraListener() {
+            @Override
+            public void onPictureTaken(@NonNull PictureResult result) {
+                Log.d("TAG", "onPictureTaken: ");
+
+                // Access the byte[] or file
+                byte[] data = result.getData();
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+                // Show in ImageView
+                llWatermark = findViewById(R.id.llWatermark);
+
+                BitmapDrawable backgroundDrawable = new BitmapDrawable(getResources(), bitmap);
+                previewImage.setBackground(backgroundDrawable);
+
+//                previewImage.setImageBitmap(bitmap);
+                previewImage.setVisibility(View.VISIBLE);
+
+                // Hide the camera view if you want
+                camera.close();
+                camera.setVisibility(View.GONE);
+                llWatermark.setVisibility(View.GONE);
+                captureButton.setVisibility(View.GONE);
+                ulangButton.setVisibility(View.VISIBLE);
+
+                // Or save to file
+//                result.toFile(new File(getFilesDir(), "picture.jpg"), file -> {
+//                    // File saved!
+//                });
+            }
+        });
+
+        captureButton.setOnClickListener(v -> camera.takePicture());
+
+        ulangButton = findViewById(R.id.ulangButton);
+        ulangButton.setOnClickListener(view -> {
+            previewImage.setVisibility(View.GONE);
+            ulangButton.setVisibility(View.GONE);
+
+            camera.open();
+            camera.setVisibility(View.VISIBLE);
+            captureButton.setVisibility(View.VISIBLE);
+            llWatermark.setVisibility(View.VISIBLE);
+        });
+        */
+
+        container = findViewById(R.id.container_layout);
+
+        // Loop to create 5 flexible counters
+        int counter = 5;
+        for (int i = 1; i <= counter; i++) {
+            createCounter(i, counter);
         }
     }
 
@@ -231,5 +311,56 @@ public class MainActivity extends AppCompatActivity {
         Bitmap resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
         bitmap.recycle();
         return resizedBitmap;
+    }
+
+    private void createCounter(int index, int counter) {
+        // Create a sub-layout
+        RelativeLayout layout = new RelativeLayout(this);
+
+        // Add Image
+        ImageView imageView = new ImageView(this);
+        imageView.setBackgroundColor(Color.BLUE);
+
+        RelativeLayout.LayoutParams paramsImageView = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT
+        );
+        imageView.setLayoutParams(paramsImageView);
+
+        layout.addView(imageView);
+
+        // Create the increment button
+        Button btn = new Button(this);
+        btn.setText("+");
+
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.addRule(RelativeLayout.CENTER_IN_PARENT);
+        btn.setLayoutParams(params);
+
+        layout.addView(btn);
+
+        // Add Action to Button
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageView.setBackgroundColor(Color.RED);
+                Toast.makeText(MainActivity.this, "Button Clicked!", Toast.LENGTH_SHORT).show();
+                btn.setText("Ubah");
+            }
+        });
+
+        // Add Margin to container
+        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 300);
+        if (index==counter){
+            linearLayoutParams.setMargins(15, 10, 15, 10);
+        }else {
+            linearLayoutParams.setMargins(15, 10, 15, 0);
+        }
+
+        container.addView(layout, linearLayoutParams);
     }
 }
